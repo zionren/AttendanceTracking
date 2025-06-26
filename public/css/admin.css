@@ -642,9 +642,12 @@
 /* Dashboard Grid Layout */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: var(--spacing-lg);
     margin-top: var(--spacing-lg);
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .chart-container {
@@ -660,9 +663,18 @@
 
 .chart-canvas-container {
     position: relative;
-    height: 300px;
+    height: 400px;
     width: 100%;
     min-width: 0;
+}
+
+/* Specific chart heights for better layout */
+.chart-container:first-child .chart-canvas-container {
+    height: 400px; /* Bar chart - needs more height for timeline */
+}
+
+.chart-container:last-child .chart-canvas-container {
+    height: 350px; /* Pie chart - doesn't need as much height */
 }
 
 .admin-header {
@@ -753,10 +765,13 @@
 /* Charts Container */
 .charts-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-xl);
     min-width: 0;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .chart-card {
