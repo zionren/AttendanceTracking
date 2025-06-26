@@ -128,7 +128,8 @@ class AttendanceForm {
                 this.form.parentNode.insertBefore(this.formClosedMessage, this.form.nextSibling);
             }
             this.formClosedMessage.style.display = 'flex';
-        } else {
+        } 
+        else {
             this.form.querySelectorAll('input, select, button').forEach(el => el.disabled = false);
             if (this.formClosedMessage) this.formClosedMessage.style.display = 'none';
         }
@@ -211,11 +212,13 @@ class AttendanceForm {
 
     validateName() {
         const name = this.nameInput.value.trim();
+        
         if (!name) {
             this.showFieldError('nameError', 'Name is required');
             this.nameInput.classList.add('error');
             return false;
         }
+        
         if (name.length < 2) {
             this.showFieldError('nameError', 'Name must be at least 2 characters long');
             this.nameInput.classList.add('error');
@@ -328,7 +331,7 @@ class AttendanceForm {
         } catch (error) {
             console.error('Submission error:', error);
             
-            if (error.message.includes('Duplicate attendance')) {
+            if (error.message.includes('Duplicate attendance') || error.message.includes('duplicate key value') || error.message.includes('unique constraint')) {
                 await this.modal.alert(
                     'You have already logged in today for this main. Duplicate entries are not allowed.',
                     'Duplicate Entry'
