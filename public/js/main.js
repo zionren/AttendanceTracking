@@ -93,6 +93,7 @@ class AttendanceForm {
         this.successMessage = document.getElementById('successMessage');
         this.errorMessage = document.getElementById('errorMessage');
         this.modal = new ModalManager();
+        this.formClosedMessage = null;
         
         this.init();
     }
@@ -104,6 +105,33 @@ class AttendanceForm {
         
         // Update time every second
         setInterval(() => this.updateCurrentTime(), 1000);
+        // Check form open/close every minute
+        this.checkFormOpenClose();
+        setInterval(() => this.checkFormOpenClose(), 60000);
+    }
+
+    checkFormOpenClose() {
+        // Get current time in GMT+8
+        const now = new Date();
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+        const gmt8 = new Date(utc + (8 * 60 * 60 * 1000));
+        const hour = gmt8.getHours();
+        // Form is open from 6:00 to 20:59 (6am to before 9pm)
+        const isOpen = hour >= 6 && hour < 21;
+        if (!isOpen) {
+            this.form.querySelectorAll('input, select, button').forEach(el => el.disabled = true);
+            if (!this.formClosedMessage) {
+                this.formClosedMessage = document.createElement('div');
+                this.formClosedMessage.className = 'error-message';
+                this.formClosedMessage.style.marginTop = '2rem';
+                this.formClosedMessage.innerHTML = '<div class="error-icon">⏰</div><div class="error-text">Attendance is only open from 6:00am to 9:00pm (GMT+8). Please come back during open hours.</div>';
+                this.form.parentNode.insertBefore(this.formClosedMessage, this.form.nextSibling);
+            }
+            this.formClosedMessage.style.display = 'flex';
+        } else {
+            this.form.querySelectorAll('input, select, button').forEach(el => el.disabled = false);
+            if (this.formClosedMessage) this.formClosedMessage.style.display = 'none';
+        }
     }
 
     setupEventListeners() {
