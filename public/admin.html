@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gazelvouer Academy - Admin Panel</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <div class="background-overlay"></div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Admin Authentication</h2>
+                <div class="academy-crest">⚜</div>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="submit-btn">Login</button>
+                <div class="error-message" id="loginError" style="display: none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Admin Panel -->
+    <div id="adminPanel" class="admin-container" style="display: none;">
+        <header class="admin-header">
+            <h1 class="academy-title">GAZELVOUER ACADEMY</h1>
+            <div class="academy-subtitle">Administrative Dashboard</div>
+            <button id="logoutBtn" class="logout-btn">Logout</button>
+        </header>
+
+        <nav class="admin-nav">
+            <button class="nav-btn active" data-section="dashboard">Dashboard</button>
+            <button class="nav-btn" data-section="attendance">Attendance Records</button>
+            <button class="nav-btn" data-section="mains">Manage Mains</button>
+            <button class="nav-btn" data-section="gantt">Gantt Chart</button>
+            <button class="nav-btn" data-section="export">Export Data</button>
+        </nav>
+
+        <main class="admin-main">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="admin-section active">
+                <h2>Attendance Overview</h2>
+                
+                <div class="dashboard-grid">
+                    <div class="chart-container chart-card">
+                        <div class="chart-header">
+                            <h3>Daily Attendance (Last 30 Days)</h3>
+                            <button class="export-chart-btn" data-chart="dailyChart">Export Chart</button>
+                        </div>
+                        <div class="chart-canvas-container">
+                            <canvas id="dailyChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-container chart-card">
+                        <div class="chart-header">
+                            <h3>Today's Attendance by Main</h3>
+                            <div class="chart-controls">
+                                <input type="date" id="pieChartDate" class="date-input">
+                                <button class="export-chart-btn" data-chart="pieChart">Export Chart</button>
+                            </div>
+                        </div>
+                        <div class="chart-canvas-container">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Attendance Records Section -->
+            <section id="attendance" class="admin-section">
+                <h2>Attendance Records</h2>
+                
+                <div class="controls-panel">
+                    <div class="form-group">
+                        <label for="mainFilter">Select Main:</label>
+                        <select id="mainFilter" class="form-select">
+                            <option value="">All Mains</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="attendanceDate">Date:</label>
+                        <input type="date" id="attendanceDate" class="form-input">
+                    </div>
+                    <button id="loadAttendance" class="action-btn">Load Records</button>
+                </div>
+
+                <div class="attendance-table-container">
+                    <table id="attendanceTable" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Main</th>
+                                <th>Login Time</th>
+                                <th>Time Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                            <tr>
+                                <td colspan="5" class="no-data">Select a main and date to view attendance records</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Manage Mains Section -->
+            <section id="mains" class="admin-section">
+                <h2>Manage Mains</h2>
+                
+                <div class="create-main-panel">
+                    <h3 id="formTitle">Create New Main</h3>
+                    <form id="createMainForm" class="create-form">
+                        <input type="hidden" id="editMainId" name="id">
+                        <div class="form-group">
+                            <label for="mainName" class="form-label">Main Name (Short):</label>
+                            <input type="text" id="mainName" name="name" class="form-input" required placeholder="e.g., 5">
+                        </div>
+                        <div class="form-group">
+                            <label for="mainDisplayName" class="form-label">Display Name:</label>
+                            <input type="text" id="mainDisplayName" name="displayName" class="form-input" required placeholder="e.g., Main 5">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="submit-btn" id="submitMainBtn">Create Main</button>
+                            <button type="button" class="cancel-btn" id="cancelEditBtn" style="display: none;">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="mains-list">
+                    <h3>Existing Mains</h3>
+                    <div id="mainsList" class="mains-grid">
+                        <div class="loading">Loading mains...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gantt Chart Section -->
+            <section id="gantt" class="admin-section">
+                <h2>Attendance Gantt Chart</h2>
+                
+                <div class="controls-panel">
+                    <div class="form-group">
+                        <label for="ganttMain">Main:</label>
+                        <select id="ganttMain" class="form-select">
+                            <option value="all">All Mains</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ganttStartDate">Start Date:</label>
+                        <input type="date" id="ganttStartDate" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="ganttEndDate">End Date:</label>
+                        <input type="date" id="ganttEndDate" class="form-input">
+                    </div>
+                    <button id="loadGantt" class="action-btn">Generate Chart</button>
+                    <button id="exportGantt" class="export-btn">Export Gantt</button>
+                </div>
+
+                <div id="ganttContainer" class="gantt-container">
+                    <div class="no-data">Select parameters and click "Generate Chart" to view the Gantt chart</div>
+                </div>
+            </section>
+
+            <!-- Export Data Section -->
+            <section id="export" class="admin-section">
+                <h2>Export Attendance Data</h2>
+                
+                <div class="export-panel">
+                    <div class="form-group">
+                        <label for="exportMains">Select Mains:</label>
+                        <select id="exportMains" class="form-select" multiple>
+                            <option value="all">All Mains</option>
+                        </select>
+                        <small>Hold Ctrl/Cmd to select multiple mains</small>
+                    </div>
+                    
+                    <div class="date-range">
+                        <div class="form-group">
+                            <label for="exportStartDate">Start Date:</label>
+                            <input type="date" id="exportStartDate" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="exportEndDate">End Date:</label>
+                            <input type="date" id="exportEndDate" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <button id="exportPDF" class="export-btn">Export to PDF</button>
+                </div>
+
+                <div class="export-preview">
+                    <h3>Preview</h3>
+                    <div id="exportPreview" class="preview-container">
+                        <div class="no-data">Configure export parameters to see preview</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Edit Attendance Modal -->
+    <div id="editAttendanceModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Attendance Record</h3>
+                <span class="modal-close" id="editModalClose">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editAttendanceForm" class="edit-form">
+                    <input type="hidden" id="editRecordId" name="recordId">
+                    
+                    <div class="form-group">
+                        <label for="editName">Name:</label>
+                        <input type="text" id="editName" name="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editMain">Main:</label>
+                        <select id="editMain" name="main" required>
+                            <option value="">Select main...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editLoginTime">Login Time:</label>
+                        <input type="datetime-local" id="editLoginTime" name="loginTime" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="editIsCustomTime" name="isCustomTime">
+                            Custom Time Entry
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" id="editCancelBtn">Cancel</button>
+                <button class="modal-btn primary" id="editSaveBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Component -->
+    <div id="customModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Message</h3>
+                <span class="modal-close" id="modalClose">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage">Message content</p>
+            </div>
+            <div class="modal-footer">
+                <button id="modalOk" class="modal-btn primary">OK</button>
+                <button id="modalCancel" class="modal-btn secondary" style="display: none;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/pdf-export.js"></script>
+</body>
+</html>

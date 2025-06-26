@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gazelvouer Academy - Setup Guide</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        .setup-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .setup-section {
+            background: rgba(245, 238, 220, 0.95);
+            border: 2px solid #d4af37;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .setup-section h2 {
+            color: #8b4513;
+            font-family: 'Cinzel', serif;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #d4af37;
+            padding-bottom: 0.5rem;
+        }
+        
+        .setup-section h3 {
+            color: #a0522d;
+            font-family: 'Cinzel', serif;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .code-block {
+            background: #2d1810;
+            color: #f5f5dc;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-left: 4px solid #d4af37;
+        }
+        
+        .step-list {
+            list-style: none;
+            counter-reset: step-counter;
+        }
+        
+        .step-list li {
+            counter-increment: step-counter;
+            margin-bottom: 1rem;
+            padding-left: 3rem;
+            position: relative;
+        }
+        
+        .step-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #d4af37;
+            color: #2d1810;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-family: 'Cinzel', serif;
+        }
+        
+        .env-example {
+            background: #f0e68c;
+            border: 1px solid #d4af37;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        
+        .warning {
+            background: #ffe4b5;
+            border: 2px solid #ff8c00;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .warning::before {
+            content: "⚠️ ";
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-overlay"></div>
+    
+    <div class="container">
+        <header class="academy-header">
+            <h1 class="academy-title">GAZELVOUER ACADEMY</h1>
+            <div class="academy-subtitle">Setup Guide</div>
+        </header>
+
+        <main class="setup-container">
+            <div class="setup-section">
+                <h2>📋 Installation Requirements</h2>
+                <p>Before running the Gazelvouer Academy Attendance System, ensure you have the following installed:</p>
+                
+                <h3>Prerequisites</h3>
+                <ul>
+                    <li><strong>Node.js</strong> (version 16 or higher)</li>
+                    <li><strong>npm</strong> (comes with Node.js)</li>
+                    <li><strong>Supabase Account</strong> (free tier available)</li>
+                </ul>
+
+                <h3>Required NPM Packages</h3>
+                <div class="code-block">
+npm install express cors dotenv drizzle-orm postgres
+                </div>
+            </div>
+
+            <div class="setup-section">
+                <h2>🗄️ Database Setup (Supabase)</h2>
+                <p>Follow these steps to set up your Supabase database:</p>
+                
+                <ol class="step-list">
+                    <li>Go to the <a href="https://supabase.com/dashboard/projects" target="_blank">Supabase dashboard</a></li>
+                    <li>Create a new project if you haven't already</li>
+                    <li>Once in the project page, click the "Connect" button on the top toolbar</li>
+                    <li>Copy URI value under "Connection string" → "Transaction pooler"</li>
+                    <li>Replace <code>[YOUR-PASSWORD]</code> with the database password you set for the project</li>
+                </ol>
+
+                <div class="warning">
+                    <strong>Important:</strong> Keep your database credentials secure and never commit them to version control.
+                </div>
+            </div>
+
+            <div class="setup-section">
+                <h2>⚙️ Environment Configuration</h2>
+                <p>Create a <code>.env</code> file in your project root directory with the following variables:</p>
+                
+                <div class="env-example">
+                    <strong>Required Environment Variables:</strong>
+                    <div class="code-block">
+# Database Configuration
+DATABASE_URL=postgresql://[username]:[password]@[host]:[port]/[database]
+SUPABASE_ANON=your_supabase_anon_key
+SUPABASE_KEY=your_supabase_service_role_key
+
+# Server Configuration (Optional)
+PORT=8000
+                    </div>
+                </div>
+
+                <h3>How to Get Supabase Keys</h3>
+                <ol class="step-list">
+                    <li>In your Supabase project dashboard, go to "Settings" → "API"</li>
+                    <li>Copy the <strong>anon public</strong> key for <code>SUPABASE_ANON</code></li>
+                    <li>Copy the <strong>service_role</strong> key for <code>SUPABASE_KEY</code></li>
+                </ol>
+            </div>
+
+            <div class="setup-section">
+                <h2>🚀 Running the Application</h2>
+                
+                <h3>Development Mode</h3>
+                <div class="code-block">
+# Install dependencies
+npm install
+
+# Start the server
+node server.js
+                </div>
+
+                <h3>Access Points</h3>
+                <ul>
+                    <li><strong>Main Application:</strong> <a href="/">http://localhost:8000</a></li>
+                    <li><strong>Admin Panel:</strong> <a href="/admin">http://localhost:8000/admin</a></li>
+                    <li><strong>Setup Guide:</strong> <a href="/setup">http://localhost:8000/setup</a></li>
+                </ul>
+            </div>
+
+            <div class="setup-section">
+                <h2>👨‍💼 Admin Access</h2>
+                <p>The admin panel is protected with the following credentials:</p>
+                
+                <div class="code-block">
+Username: RenZion
+Password: Zion102%
+                </div>
+
+                <div class="warning">
+                    <strong>Security Note:</strong> In a production environment, consider implementing more robust authentication and changing these default credentials.
+                </div>
+            </div>
+
+            <div class="setup-section">
+                <h2>📊 Features Overview</h2>
+                
+                <h3>Main Attendance Form</h3>
+                <ul>
+                    <li>Student name input with validation</li>
+                    <li>Main selection (1, 2, 3, 4, Council)</li>
+                    <li>Dual time logging (system time or custom time)</li>
+                    <li>Duplicate login prevention</li>
+                </ul>
+
+                <h3>Admin Dashboard</h3>
+                <ul>
+                    <li>Daily attendance bar chart (last 30 days)</li>
+                    <li>Pie chart for main-specific attendance</li>
+                    <li>Individual main attendance viewer</li>
+                    <li>PDF export functionality</li>
+                    <li>Dynamic main creation</li>
+                    <li>Gantt chart for attendance patterns</li>
+                    <li>Chart and data export capabilities</li>
+                </ul>
+            </div>
+
+            <div class="setup-section">
+                <h2>🔧 Troubleshooting</h2>
+                
+                <h3>Common Issues</h3>
+                <ul>
+                    <li><strong>Database Connection Error:</strong> Verify your DATABASE_URL is correct and the database is accessible</li>
+                    <li><strong>Port Already in Use:</strong> Change the PORT in your .env file or stop other services using port 8000</li>
+                    <li><strong>Missing Dependencies:</strong> Run <code>npm install</code> to install all required packages</li>
+                    <li><strong>Supabase Errors:</strong> Check your SUPABASE_ANON and SUPABASE_KEY are correctly set</li>
+                </ul>
+
+                <h3>Database Initialization</h3>
+                <p>The application automatically creates the required tables and default mains on startup. If you encounter issues:</p>
+                <ol>
+                    <li>Check the server console for initialization messages</li>
+                    <li>Verify your database permissions allow table creation</li>
+                    <li>Ensure the database specified in DATABASE_URL exists</li>
+                </ol>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-links">
+                <a href="/" class="footer-link">← Back to Main Form</a>
+                <a href="/admin" class="footer-link">Admin Panel</a>
+            </div>
+            <div class="footer-text">
+                © 2025 Gazelvouer Academy. All rights reserved.
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
