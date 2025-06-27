@@ -83,14 +83,14 @@ router.get('/main-attendance/:main', async (req, res) => {
                 query = client`
                     SELECT id, name, main, login_time, is_custom_time
                     FROM attendance
-                    WHERE DATE(login_time) = ${date}
+                    WHERE login_time::date = ${date}::date
                     ORDER BY login_time DESC
                 `;
             } else {
                 query = client`
                     SELECT id, name, main, login_time, is_custom_time
                     FROM attendance
-                    WHERE main = ${main} AND DATE(login_time) = ${date}
+                    WHERE main = ${main} AND login_time::date = ${date}::date
                     ORDER BY login_time DESC
                 `;
             }
@@ -99,7 +99,7 @@ router.get('/main-attendance/:main', async (req, res) => {
                 query = client`
                     SELECT id, name, main, login_time, is_custom_time
                     FROM attendance
-                    WHERE DATE(login_time) BETWEEN ${startDate} AND ${endDate}
+                    WHERE login_time::date BETWEEN ${startDate}::date AND ${endDate}::date
                     ORDER BY login_time DESC
                 `;
             } else {
@@ -107,7 +107,7 @@ router.get('/main-attendance/:main', async (req, res) => {
                     SELECT id, name, main, login_time, is_custom_time
                     FROM attendance
                     WHERE main = ${main} 
-                    AND DATE(login_time) BETWEEN ${startDate} AND ${endDate}
+                    AND login_time::date BETWEEN ${startDate}::date AND ${endDate}::date
                     ORDER BY login_time DESC
                 `;
             }
@@ -118,14 +118,14 @@ router.get('/main-attendance/:main', async (req, res) => {
                 query = client`
                     SELECT id, name, main, login_time, is_custom_time
                     FROM attendance
-                    WHERE DATE(login_time) = ${today}
+                    WHERE login_time::date = ${today}::date
                     ORDER BY login_time DESC
                 `;
             } else {
                 query = client`
                     SELECT id, name, main, login_time, is_custom_time
                     FROM attendance
-                    WHERE main = ${main} AND DATE(login_time) = ${today}
+                    WHERE main = ${main} AND login_time::date = ${today}::date
                     ORDER BY login_time DESC
                 `;
             }
@@ -366,57 +366,118 @@ router.patch('/mains/:id/toggle', async (req, res) => {
     }
 });
 
-// Edit attendance record
+// Create new attendance record (admin only)
+router.post('/attendance', async (req, res) => {
+    try {
+        const { name, main, loginTime, isCustomTime } = req.body;
+        
+        // Validation
+        if (!name || !main || !loginTime) {
+            return res.status(400).json({ error: 'Name, main, and login time are required' });
+        }
+        
+        // Validate name format
+        if (!/^[a-zA-Z\s\-'\.]+$/.test(name)) {
+            return res.status(400).json({ error: 'Name can only contain letters, spaces, hyphens, apostrophes, and periods' });
+        }
+        
+        // Check if main exists
+        const mainExists = await client`
+            SELECT id FROM mains WHERE name = ${main}
+        `;
+        
+        if (mainExists.length === 0) {
+            return res.status(400).json({ error: 'Selected main does not exist' });
+        }
+        
+        try {
+            // Insert attendance record
+            const result = await client`
+                INSERT INTO attendance (name, main, login_time, is_custom_time)
+                VALUES (${name.trim()}, ${main}, ${loginTime}, ${isCustomTime || false})
+                RETURNING *
+            `;
+            
+            res.json({
+                message: 'Attendance record created successfully',
+                record: result[0]
+            });
+            
+        } catch (dbError) {
+            // Handle duplicate entry error
+            if (dbError.message.includes('duplicate key value') || dbError.code === '23505') {
+                res.status(409).json({ error: 'Duplicate attendance: This person has already logged in today for this main' });
+            } else {
+                throw dbError;
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error creating attendance record:', error);
+        res.status(500).json({ error: 'Failed to create attendance record' });
+    }
+});
+
+// Update attendance record (admin only)
 router.put('/attendance/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, main, login_time, is_custom_time } = req.body;
-
-        if (!name || !main || !login_time) {
+        const { name, main, loginTime, isCustomTime } = req.body;
+        
+        // Validation
+        if (!name || !main || !loginTime) {
             return res.status(400).json({ error: 'Name, main, and login time are required' });
         }
-
+        
+        // Validate name format
+        if (!/^[a-zA-Z\s\-'\.]+$/.test(name)) {
+            return res.status(400).json({ error: 'Name can only contain letters, spaces, hyphens, apostrophes, and periods' });
+        }
+        
         // Check if record exists
         const existingRecord = await client`
-            SELECT id FROM attendance WHERE id = ${id}
+            SELECT * FROM attendance WHERE id = ${id}
         `;
-
+        
         if (existingRecord.length === 0) {
             return res.status(404).json({ error: 'Attendance record not found' });
         }
-
-        // Check for duplicate attendance (same person, same main, same date, different ID)
-        const recordDate = new Date(login_time).toISOString().split('T')[0];
-        const duplicateCheck = await client`
-            SELECT id FROM attendance 
-            WHERE name = ${name} 
-            AND main = ${main} 
-            AND DATE(login_time) = ${recordDate}
-            AND id != ${id}
+        
+        // Check if main exists
+        const mainExists = await client`
+            SELECT id FROM mains WHERE name = ${main}
         `;
-
-        if (duplicateCheck.length > 0) {
-            return res.status(409).json({ 
-                error: 'Duplicate attendance: This person already has attendance for this main on this date.' 
-            });
+        
+        if (mainExists.length === 0) {
+            return res.status(400).json({ error: 'Selected main does not exist' });
         }
-
-        // Update the record
-        const result = await client`
-            UPDATE attendance 
-            SET name = ${name}, 
-                main = ${main}, 
-                login_time = ${login_time}, 
-                is_custom_time = ${is_custom_time || false}
-            WHERE id = ${id}
-            RETURNING id, name, main, login_time, is_custom_time
-        `;
-
-        res.json({
-            message: 'Attendance record updated successfully',
-            attendance: result[0]
-        });
-
+        
+        try {
+            // Update attendance record
+            const result = await client`
+                UPDATE attendance 
+                SET name = ${name.trim()}, 
+                    main = ${main}, 
+                    login_time = ${loginTime}, 
+                    is_custom_time = ${isCustomTime || false}
+                WHERE id = ${id}
+                RETURNING *
+            `;
+            
+            res.json({
+                message: 'Attendance record updated successfully',
+                record: result[0]
+            });
+            
+        } catch (dbError) {
+            // Handle duplicate entry error
+            if (dbError.message.includes('duplicate key value') || dbError.code === '23505') {
+                res.status(409).json({ error: 'Duplicate attendance: This person has already logged in today for this main' });
+            } else {
+                throw dbError;
+            }
+        }
+        
     } catch (error) {
         console.error('Error updating attendance record:', error);
         res.status(500).json({ error: 'Failed to update attendance record' });
