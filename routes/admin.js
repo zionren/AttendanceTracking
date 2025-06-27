@@ -97,7 +97,7 @@ router.post('/attendance', async (req, res) => {
     }
 });
 
-// Get daily attendance statistics for bar chart
+// Bar chart attendance "get"
 router.get('/daily-stats', async (req, res) => {
     try {
         const { days = 30 } = req.query;
@@ -132,13 +132,15 @@ router.get('/daily-stats', async (req, res) => {
     }
 });
 
-// Get attendance by main for pie chart
+// Pie chart main attendance "get"
 router.get('/main-stats', async (req, res) => {
     try {
         const { date } = req.query;
         const targetDate = date || new Date().toISOString().split('T')[0];
 
-        const stats = await client`
+        let stats;
+        try {
+            stats = await client`
             SELECT 
                 m.display_name as main,
                 COUNT(a.id) as count
@@ -149,19 +151,25 @@ router.get('/main-stats', async (req, res) => {
             GROUP BY m.name, m.display_name
             ORDER BY 
                 CASE 
-                    WHEN m.name = 'council' THEN 999 
-                    ELSE CAST(m.name AS INTEGER) 
+                WHEN m.name = 'council' THEN 999 
+                ELSE CAST(m.name AS INTEGER) 
                 END
-        `;
+            `;
+        } 
+        catch (dbError) {
+            console.error('Error fetching main stats from database:', dbError);
+            return res.status(500).json({ error: 'Failed to fetch main statistics from database' });
+        }
 
         res.json(stats);
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error fetching main stats:', error);
         res.status(500).json({ error: 'Failed to fetch main statistics' });
     }
 });
 
-// Get attendance records for specific main or all mains
+// Filter for mains
 router.get('/main-attendance/:main', async (req, res) => {
     try {
         const { main } = req.params;
@@ -172,60 +180,102 @@ router.get('/main-attendance/:main', async (req, res) => {
 
         if (date) {
             if (isAllMains) {
-                query = client`
-                    SELECT id, name, main, login_time, is_custom_time
-                    FROM attendance
-                    WHERE login_time::date = ${date}::date
-                    ORDER BY login_time DESC
-                `;
-            } else {
-                query = client`
-                    SELECT id, name, main, login_time, is_custom_time
-                    FROM attendance
-                    WHERE main = ${main} AND login_time::date = ${date}::date
-                    ORDER BY login_time DESC
-                `;
+                try {
+                    query = client`
+                        SELECT id, name, main, login_time, is_custom_time
+                        FROM attendance
+                        WHERE login_time::date = ${date}::date
+                        ORDER BY login_time DESC
+                    `;
+                } 
+                catch (dbError) {
+                    console.error('Error building attendance query:', dbError);
+                    return res.status(500).json({ error: 'Failed to build attendance query' });
+                }
+            } 
+            else {
+                try {
+                    query = client`
+                        SELECT id, name, main, login_time, is_custom_time
+                        FROM attendance
+                        WHERE main = ${main} AND login_time::date = ${date}::date
+                        ORDER BY login_time DESC
+                    `;
+                } 
+                catch (dbError) {
+                    console.error('Error building attendance query:', dbError);
+                    return res.status(500).json({ error: 'Failed to build attendance query' });
+                }
             }
-        } else if (startDate && endDate) {
+        } 
+        else if (startDate && endDate) {
             if (isAllMains) {
-                query = client`
-                    SELECT id, name, main, login_time, is_custom_time
-                    FROM attendance
-                    WHERE login_time::date BETWEEN ${startDate}::date AND ${endDate}::date
-                    ORDER BY login_time DESC
-                `;
-            } else {
-                query = client`
-                    SELECT id, name, main, login_time, is_custom_time
-                    FROM attendance
-                    WHERE main = ${main} 
-                    AND login_time::date BETWEEN ${startDate}::date AND ${endDate}::date
-                    ORDER BY login_time DESC
-                `;
+                try {
+                    query = client`
+                        SELECT id, name, main, login_time, is_custom_time
+                        FROM attendance
+                        WHERE login_time::date BETWEEN ${startDate}::date AND ${endDate}::date
+                        ORDER BY login_time DESC
+                    `;
+                } 
+                catch (dbError) {
+                    console.error('Error building attendance query:', dbError);
+                    return res.status(500).json({ error: 'Failed to build attendance query' });
+                }
+            } 
+            else {
+                try {
+                    query = client`
+                        SELECT id, name, main, login_time, is_custom_time
+                        FROM attendance
+                        WHERE main = ${main} 
+                        AND login_time::date BETWEEN ${startDate}::date AND ${endDate}::date
+                        ORDER BY login_time DESC
+                    `;
+                } 
+                catch (dbError) {
+                    console.error('Error building attendance query:', dbError);
+                    return res.status(500).json({ error: 'Failed to build attendance query' });
+                }
             }
-        } else {
-            // Default to today
+        } 
+        else {
+            // Default is the current day
             const today = new Date().toISOString().split('T')[0];
             if (isAllMains) {
-                query = client`
-                    SELECT id, name, main, login_time, is_custom_time
-                    FROM attendance
-                    WHERE login_time::date = ${today}::date
-                    ORDER BY login_time DESC
-                `;
-            } else {
-                query = client`
-                    SELECT id, name, main, login_time, is_custom_time
-                    FROM attendance
-                    WHERE main = ${main} AND login_time::date = ${today}::date
-                    ORDER BY login_time DESC
-                `;
+                try {
+                    query = client`
+                        SELECT id, name, main, login_time, is_custom_time
+                        FROM attendance
+                        WHERE login_time::date = ${today}::date
+                        ORDER BY login_time DESC
+                    `;
+                } 
+                catch (dbError) {
+                    console.error('Error building attendance query:', dbError);
+                    return res.status(500).json({ error: 'Failed to build attendance query' });
+                }
+            } 
+            else {
+                try {
+                    query = client`
+                        SELECT id, name, main, login_time, is_custom_time
+                        FROM attendance
+                        WHERE main = ${main} AND login_time::date = ${today}::date
+                        ORDER BY login_time DESC
+                    `;
+                } 
+                catch (dbError) {
+                    console.error('Error building attendance query:', dbError);
+                    return res.status(500).json({ error: 'Failed to build attendance query' });
+                }
             }
         }
 
         const attendance = await query;
         res.json(attendance);
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error fetching main attendance:', error);
         res.status(500).json({ error: 'Failed to fetch attendance records' });
     }
@@ -259,7 +309,8 @@ router.get('/gantt-data', async (req, res) => {
         `;
 
         res.json(ganttData);
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error fetching Gantt data:', error);
         res.status(500).json({ error: 'Failed to fetch Gantt chart data' });
     }
@@ -285,7 +336,8 @@ router.post('/mains', async (req, res) => {
             main: result[0]
         });
 
-    } catch (error) {
+    } 
+    catch (error) {
         if (error.code === '23505') { // Unique constraint violation
             res.status(409).json({ error: 'Main with this name already exists' });
         } else {
@@ -452,7 +504,8 @@ router.patch('/mains/:id/toggle', async (req, res) => {
             main: result[0]
         });
 
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error toggling main status:', error);
         res.status(500).json({ error: 'Failed to update main status' });
     }
@@ -519,16 +572,19 @@ router.post('/attendance', async (req, res) => {
                 record: result[0]
             });
             
-        } catch (dbError) {
+        } 
+        catch (dbError) {
             // Handle duplicate entry error
             if (dbError.message.includes('duplicate key value') || dbError.code === '23505') {
                 res.status(409).json({ error: 'Duplicate attendance: This person has already logged in today for this main' });
-            } else {
+            } 
+            else {
                 throw dbError;
             }
         }
         
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error creating attendance record:', error);
         res.status(500).json({ error: 'Failed to create attendance record' });
     }
@@ -595,18 +651,20 @@ router.put('/attendance/:id', async (req, res) => {
             // Handle duplicate entry error
             if (dbError.message.includes('duplicate key value') || dbError.code === '23505') {
                 res.status(409).json({ error: 'Duplicate attendance: This person has already logged in today for this main' });
-            } else {
+            } 
+            else {
                 throw dbError;
             }
         }
         
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error updating attendance record:', error);
         res.status(500).json({ error: 'Failed to update attendance record' });
     }
 });
 
-// Delete attendance record
+// Attendance deletion
 router.delete('/attendance/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -630,7 +688,8 @@ router.delete('/attendance/:id', async (req, res) => {
             deletedRecord: existingRecord[0]
         });
 
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error deleting attendance record:', error);
         res.status(500).json({ error: 'Failed to delete attendance record' });
     }

@@ -2,16 +2,16 @@ const { drizzle } = require('drizzle-orm/postgres-js');
 const { pgTable, serial, varchar, timestamp, text, boolean } = require('drizzle-orm/pg-core');
 const postgres = require('postgres');
 
-// Database connection
+// Connect to the database
 let connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
     throw new Error('DATABASE_URL environment variable is required');
 }
 
-// Clean up the connection string - remove any leading hyphens
+// Clean up connection string
 connectionString = connectionString.replace(/^-+/, '');
 
-// Parse URL manually to handle special characters in password
+// Special characters on the password in the admin
 const match = connectionString.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
 if (!match) {
     throw new Error('Invalid DATABASE_URL format');
@@ -52,7 +52,7 @@ const mains = pgTable('mains', {
 // Initialize default mains
 async function initializeDatabase() {
     try {
-        // Create tables if they don't exist
+        // Create the tables, but only if they don't really exist on the Supabase backend
         await client`
             CREATE TABLE IF NOT EXISTS attendance (
                 id SERIAL PRIMARY KEY,
@@ -70,7 +70,8 @@ async function initializeDatabase() {
                 CREATE UNIQUE INDEX IF NOT EXISTS idx_attendance_daily_unique 
                 ON attendance (name, main, (login_time::date))
             `;
-        } catch (indexError) {
+        } 
+        catch (indexError) {
             console.log('Index creation skipped (may already exist)');
         }
 
@@ -102,7 +103,8 @@ async function initializeDatabase() {
         }
 
         console.log('Database initialized successfully');
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Database initialization error:', error);
     }
 }
