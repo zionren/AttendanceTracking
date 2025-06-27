@@ -4,13 +4,19 @@ const router = express.Router();
 
 // Admin authentication
 router.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    
-    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-        res.json({ success: true, message: 'Login successful' });
+    try {
+        const { username, password } = req.body;
+
+        if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+            res.json({ success: true, message: 'Login successful' });
+        } 
+        else {
+            res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
     } 
-    else {
-        res.status(401).json({ success: false, message: 'Invalid credentials' });
+    catch (error) {
+        console.error('Error during admin login:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
     }
 });
 
@@ -32,25 +38,43 @@ router.post('/attendance', async (req, res) => {
         // Check for duplicate attendance (same name, main, and date)
         const attendanceDate = parsedLoginTime.toISOString().split('T')[0];
         
-        const existingAttendance = await client`
+        let existingAttendance;
+        try {
+            existingAttendance = await client`
             SELECT id FROM attendance 
             WHERE LOWER(name) = LOWER(${name}) 
             AND main = ${main} 
             AND login_time::date = ${attendanceDate}::date
-        `;
+            `;
+        } 
+            catch (dbError) {
+            console.error('Error checking for duplicate attendance:', dbError);
+            return res.status(500).json({ error: 'Failed to check for duplicate attendance' });
+        }
         
         if (existingAttendance.length > 0) {
             return res.status(400).json({ 
-                error: 'Duplicate attendance: This person has already logged attendance today for this main'
+            error: 'Duplicate attendance: This person has already logged attendance today for this main'
             });
         }
         
         // Insert attendance record
-        const result = await client`
+        let result;
+        try {
+            result = await client`
             INSERT INTO attendance (name, main, login_time, is_custom_time) 
             VALUES (${name}, ${main}, ${parsedLoginTime.toISOString()}, ${isCustomTime})
             RETURNING *
-        `;
+            `;
+        } 
+        catch (dbError) {
+            if (dbError.message.includes('duplicate key value') || dbError.code === '23505') {
+                return res.status(409).json({ error: 'Duplicate attendance: This person has already logged in today for this main' });
+            } 
+            else {
+                throw dbError;
+            }
+        }
         
         console.log(`Admin attendance recorded: ${name} for ${main} at ${parsedLoginTime.toISOString()}`);
         res.json({ 
@@ -59,13 +83,15 @@ router.post('/attendance', async (req, res) => {
             attendance: result[0]
         });
         
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error recording admin attendance:', error);
         if (error.message.includes('unique constraint') || error.message.includes('duplicate')) {
             res.status(400).json({ 
                 error: 'Duplicate attendance: This person has already logged attendance today for this main'
             });
-        } else {
+        } 
+        else {
             res.status(500).json({ error: 'Failed to record attendance' });
         }
     }
@@ -81,7 +107,9 @@ router.get('/daily-stats', async (req, res) => {
         cutoffDate.setDate(cutoffDate.getDate() - daysInt);
         const cutoffDateStr = cutoffDate.toISOString().split('T')[0];
         
-        const stats = await client`
+        let stats;
+        try {
+            stats = await client`
             SELECT 
                 login_time::date as date,
                 COUNT(*) as count
@@ -89,10 +117,16 @@ router.get('/daily-stats', async (req, res) => {
             WHERE login_time::date >= ${cutoffDateStr}::date
             GROUP BY login_time::date
             ORDER BY date DESC
-        `;
+            `;
+        } 
+        catch (dbError) {
+            console.error('Error fetching daily stats from database:', dbError);
+            return res.status(500).json({ error: 'Failed to fetch daily statistics from database' });
+        }
 
         res.json(stats);
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error fetching daily stats:', error);
         res.status(500).json({ error: 'Failed to fetch daily statistics' });
     }
