@@ -1,4 +1,4 @@
-// Modal Manager Class (shared with admin)
+// this modal management section is shared with the administrator.
 class ModalManager {
     constructor() {
         this.modal = document.getElementById('customModal');
@@ -38,7 +38,8 @@ class ModalManager {
                 this.modalCancel.style.display = 'inline-block';
                 this.modalOk.textContent = 'Yes';
                 this.modalCancel.textContent = 'No';
-            } else {
+            } 
+            else {
                 this.modalCancel.style.display = 'none';
                 this.modalOk.textContent = 'OK';
             }
@@ -155,7 +156,8 @@ class AdminAttendanceForm {
             
             console.log('Mains loaded successfully. Total options:', this.mainSelect.options.length);
             
-        } catch (error) {
+        } 
+        catch (error) {
             console.error('Error loading mains:', error);
             await this.modal.alert('Failed to load available mains. Please refresh the page.', 'Error');
         }
@@ -189,48 +191,66 @@ class AdminAttendanceForm {
     }
 
     toggleTimeInput() {
-        if (this.customTimeRadio.checked) {
-            this.customTimeInput.style.display = 'block';
-            this.customDateTime.required = true;
-        } else {
-            this.customTimeInput.style.display = 'none';
-            this.customDateTime.required = false;
+        try {
+            if (this.customTimeRadio.checked) {
+                this.customTimeInput.style.display = 'block';
+                this.customDateTime.required = true;
+            } 
+            else {
+                this.customTimeInput.style.display = 'none';
+                this.customDateTime.required = false;
+            }
+            this.clearMessages();
+        } 
+        catch (error) {
+            console.error('Error toggling time input:', error);
         }
-        this.clearMessages();
     }
 
     validateName() {
-        const name = this.nameInput.value.trim();
-        const nameError = document.getElementById('nameError');
-        
-        if (!name) {
-            nameError.textContent = 'Please enter a name';
-            nameError.style.display = 'block';
+        try {
+            const name = this.nameInput.value.trim();
+            const nameError = document.getElementById('nameError');
+            
+            if (!name) {
+                nameError.textContent = 'Please enter a name';
+                nameError.style.display = 'block';
+                return false;
+            }
+            
+            if (name.length < 2) {
+                nameError.textContent = 'Name must be at least 2 characters';
+                nameError.style.display = 'block';
+                return false;
+            }
+            
+            nameError.style.display = 'none';
+            return true;
+        } 
+        catch (error) {
+            console.error('Error validating name:', error);
             return false;
         }
-        
-        if (name.length < 2) {
-            nameError.textContent = 'Name must be at least 2 characters';
-            nameError.style.display = 'block';
-            return false;
-        }
-        
-        nameError.style.display = 'none';
-        return true;
     }
 
     validateMain() {
-        const main = this.mainSelect.value;
-        const mainError = document.getElementById('mainError');
-        
-        if (!main) {
-            mainError.textContent = 'Please select a main';
-            mainError.style.display = 'block';
+        try {
+            const main = this.mainSelect.value;
+            const mainError = document.getElementById('mainError');
+            
+            if (!main) {
+                mainError.textContent = 'Please select a main';
+                mainError.style.display = 'block';
+                return false;
+            }
+            
+            mainError.style.display = 'none';
+            return true;
+        } 
+        catch (error) {
+            console.error('Error validating main selection:', error);
             return false;
         }
-        
-        mainError.style.display = 'none';
-        return true;
     }
 
     validateCustomTime() {
@@ -302,7 +322,8 @@ class AdminAttendanceForm {
             if (timeOption === 'custom') {
                 loginTime = new Date(formData.get('customTime')).toISOString();
                 isCustomTime = true;
-            } else {
+            } 
+            else {
                 loginTime = new Date().toISOString();
                 isCustomTime = false;
             }
@@ -331,13 +352,15 @@ class AdminAttendanceForm {
                 this.form.reset();
                 this.setDefaultCustomTime();
                 this.toggleTimeInput(); // Reset time input display
-            } else {
+            } 
+            else {
                 if (result.error && (result.error.includes('duplicate') || result.error.includes('unique constraint'))) {
                     await this.modal.alert(
                         'This person has already logged attendance today for this main. Duplicate entries are not allowed.',
                         'Duplicate Entry'
                     );
-                } else {
+                } 
+                else {
                     await this.modal.alert(
                         result.error || 'Failed to record attendance. Please try again.',
                         'Error'
@@ -345,56 +368,80 @@ class AdminAttendanceForm {
                 }
             }
             
-        } catch (error) {
+        } 
+        catch (error) {
             console.error('Submission error:', error);
             await this.modal.alert(
                 'Network error. Please check your connection and try again.',
                 'Connection Error'
             );
-        } finally {
+        } 
+        finally {
             this.setLoadingState(false);
         }
     }
 
     normalizeName(name) {
-        return name
-            .toLowerCase()
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ')
-            .trim();
+        try {
+            return name
+                .toLowerCase()
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ')
+                .trim();
+        } 
+        catch (error) {
+            console.error('Error normalizing name:', error);
+            return name;
+        }
     }
 
     setLoadingState(isLoading) {
-        const btnText = this.submitBtn.querySelector('.btn-text');
-        const btnLoader = this.submitBtn.querySelector('.btn-loader');
-        
-        if (isLoading) {
-            btnText.style.display = 'none';
-            btnLoader.style.display = 'block';
-            this.submitBtn.disabled = true;
-        } else {
-            btnText.style.display = 'block';
-            btnLoader.style.display = 'none';
-            this.submitBtn.disabled = false;
+        try {
+            const btnText = this.submitBtn.querySelector('.btn-text');
+            const btnLoader = this.submitBtn.querySelector('.btn-loader');
+
+            if (isLoading) {
+                btnText.style.display = 'none';
+                btnLoader.style.display = 'block';
+                this.submitBtn.disabled = true;
+            } 
+            else {
+                btnText.style.display = 'block';
+                btnLoader.style.display = 'none';
+                this.submitBtn.disabled = false;
+            }
+        } 
+        catch (error) {
+            console.error('Error setting loading state:', error);
         }
     }
 
     showSuccessMessage() {
-        this.successMessage.style.display = 'flex';
-        setTimeout(() => {
-            this.successMessage.style.display = 'none';
-        }, 5000);
+        try {
+            this.successMessage.style.display = 'flex';
+            setTimeout(() => {
+                this.successMessage.style.display = 'none';
+            }, 5000);
+        } 
+        catch (error) {
+            console.error('Error showing success message:', error);
+        }
     }
 
     showErrorMessage(message) {
-        const errorText = this.errorMessage.querySelector('.error-text');
-        errorText.textContent = message;
-        this.errorMessage.style.display = 'flex';
-        
-        setTimeout(() => {
-            this.errorMessage.style.display = 'none';
-        }, 8000);
+        try {
+            const errorText = this.errorMessage.querySelector('.error-text');
+            errorText.textContent = message;
+            this.errorMessage.style.display = 'flex';
+
+            setTimeout(() => {
+                this.errorMessage.style.display = 'none';
+            }, 8000);
+        } 
+        catch (error) {
+            console.error('Error showing error message:', error);
+        }
     }
 
     clearMessages() {
