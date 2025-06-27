@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-btn { background: green; color: white; padding: 10px 20px; border: none; cursor: pointer; margin: 10px; }
+        .test-result { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Admin Panel Test</h1>
+    
+    <button class="test-btn" onclick="testApiCall()">Test API Call</button>
+    <button class="test-btn" onclick="testButtonExists()">Test Button Exists</button>
+    
+    <div id="results"></div>
+
+    <script>
+        function addResult(message) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = 'test-result';
+            div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            results.appendChild(div);
+        }
+
+        async function testApiCall() {
+            try {
+                const response = await fetch('/api/admin/main-attendance/all?date=2025-06-27');
+                const data = await response.json();
+                addResult('API Call Success: ' + JSON.stringify(data));
+            } catch (error) {
+                addResult('API Call Error: ' + error.message);
+            }
+        }
+
+        function testButtonExists() {
+            // Check if we can find the button
+            const button = document.getElementById('createAttendanceBtn');
+            if (button) {
+                addResult('Button exists: ' + button.textContent);
+            } else {
+                addResult('Button NOT found');
+            }
+        }
+
+        // Test on page load
+        window.addEventListener('load', () => {
+            addResult('Page loaded');
+            testApiCall();
+        });
+    </script>
+</body>
+</html>

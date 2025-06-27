@@ -102,6 +102,17 @@ class AdminPanel {
             attendanceDate: document.getElementById('attendanceDate'),
             loadAttendanceBtn: document.getElementById('loadAttendance'),
             attendanceTableBody: document.getElementById('attendanceTableBody'),
+            createAttendanceBtn: document.getElementById('createAttendanceBtn'),
+            attendanceFormPanel: document.getElementById('attendanceFormPanel'),
+            attendanceForm: document.getElementById('attendanceForm'),
+            attendanceFormTitle: document.getElementById('attendanceFormTitle'),
+            attendanceName: document.getElementById('attendanceName'),
+            attendanceMain: document.getElementById('attendanceMain'),
+            attendanceDateTime: document.getElementById('attendanceDateTime'),
+            attendanceTimeType: document.getElementById('attendanceTimeType'),
+            submitAttendanceBtn: document.getElementById('submitAttendanceBtn'),
+            cancelAttendanceBtn: document.getElementById('cancelAttendanceBtn'),
+            editAttendanceId: document.getElementById('editAttendanceId'),
             createMainForm: document.getElementById('createMainForm'),
             mainsList: document.getElementById('mainsList'),
             ganttMain: document.getElementById('ganttMain'),
@@ -127,6 +138,11 @@ class AdminPanel {
     }
 
     setupEventListeners() {
+        // Debug: Check if button exists
+        console.log('Setting up event listeners...');
+        console.log('createAttendanceBtn element:', this.elements.createAttendanceBtn);
+        console.log('Button exists:', !!this.elements.createAttendanceBtn);
+        
         // Login form
         this.elements.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         
@@ -143,6 +159,24 @@ class AdminPanel {
         
         // Attendance records
         this.elements.loadAttendanceBtn.addEventListener('click', () => this.loadAttendanceRecords());
+        
+        // Attendance form
+        if (this.elements.createAttendanceBtn) {
+            this.elements.createAttendanceBtn.addEventListener('click', () => {
+                console.log('Create attendance button clicked!');
+                this.showAttendanceForm();
+            });
+        } else {
+            console.error('createAttendanceBtn element not found!');
+        }
+        
+        if (this.elements.attendanceForm) {
+            this.elements.attendanceForm.addEventListener('submit', (e) => this.handleAttendanceSubmit(e));
+        }
+        
+        if (this.elements.cancelAttendanceBtn) {
+            this.elements.cancelAttendanceBtn.addEventListener('click', () => this.hideAttendanceForm());
+        }
         
         // Mains management
         this.elements.createMainForm.addEventListener('submit', (e) => this.createMain(e));
@@ -230,6 +264,23 @@ class AdminPanel {
         // Load initial data
         this.loadMains();
         this.loadDashboard();
+        
+        // Load attendance records for the current date
+        setTimeout(() => this.loadAttendanceRecords(), 500);
+        
+        // Force show the create button if it exists
+        setTimeout(() => {
+            this.ensureCreateButtonExists();
+            const createBtn = document.getElementById('createAttendanceBtn');
+            if (createBtn) {
+                createBtn.style.display = 'inline-block';
+                createBtn.style.visibility = 'visible';
+                createBtn.style.opacity = '1';
+                console.log('Forced create button to be visible');
+            } else {
+                console.error('Create button still not found after admin panel load');
+            }
+        }, 1000);
     }
 
     showLoginModal() {
@@ -261,6 +312,10 @@ class AdminPanel {
         switch (sectionName) {
             case 'dashboard':
                 this.loadDashboard();
+                break;
+            case 'attendance':
+                this.loadAttendanceRecords();
+                this.ensureCreateButtonExists();
                 break;
             case 'mains':
                 this.loadMainsList();
@@ -503,14 +558,21 @@ class AdminPanel {
             }
             
             const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
             const records = await response.json();
+            
+            console.log(`Loaded ${records.length} attendance records for ${date || 'today'}`);
             
             this.displayAttendanceRecords(records);
             
         } catch (error) {
             console.error('Error loading attendance records:', error);
             this.elements.attendanceTableBody.innerHTML = 
-                '<tr><td colspan="4" class="no-data">Error loading attendance records</td></tr>';
+                `<tr><td colspan="5" class="no-data">Error loading attendance records: ${error.message}</td></tr>`;
         }
     }
 
@@ -1027,6 +1089,281 @@ class AdminPanel {
             await this.modal.alert(error.message || 'Failed to delete attendance record', 'Error');
         }
     }
+
+    // Attendance Form Management
+    async showAttendanceForm(recordId = null) {
+        try {
+            console.log('showAttendanceForm called with recordId:', recordId); // Debug
+            
+            // Load mains for the dropdown
+            await this.loadMainsForForm();
+            
+            if (recordId) {
+                // Edit mode
+                this.elements.attendanceFormTitle.textContent = 'Edit Attendance Record';
+                this.elements.submitAttendanceBtn.textContent = 'Update Record';
+                await this.loadAttendanceForEdit(recordId);
+            } else {
+                // Create mode
+                this.elements.attendanceFormTitle.textContent = 'Create New Attendance Record';
+                this.elements.submitAttendanceBtn.textContent = 'Create Record';
+                this.elements.attendanceForm.reset();
+                this.elements.editAttendanceId.value = '';
+                
+                // Set current date/time as default
+                const now = new Date();
+                // For datetime-local input, we need YYYY-MM-DDTHH:MM format
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                
+                const localDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+                console.log('Setting default datetime:', localDateTime);
+                this.elements.attendanceDateTime.value = localDateTime;
+            }
+            
+            this.elements.attendanceFormPanel.style.display = 'block';
+            this.elements.attendanceFormPanel.classList.add('show');
+            this.elements.attendanceName.focus();
+            
+        } catch (error) {
+            console.error('Error showing attendance form:', error);
+            await this.modal.alert('Error loading form. Please try again.', 'Error');
+        }
+    }
+
+    hideAttendanceForm() {
+        this.elements.attendanceFormPanel.style.display = 'none';
+        this.elements.attendanceFormPanel.classList.remove('show');
+        this.elements.attendanceForm.reset();
+        this.elements.editAttendanceId.value = '';
+    }
+
+    async loadMainsForForm() {
+        try {
+            const response = await fetch('/api/attendance/mains');
+            if (!response.ok) throw new Error('Failed to load mains');
+            
+            const mains = await response.json();
+            
+            // Clear existing options
+            this.elements.attendanceMain.innerHTML = '<option value="">Select Main</option>';
+            
+            // Add mains to select
+            mains.forEach(main => {
+                const option = document.createElement('option');
+                option.value = main.name;
+                option.textContent = main.display_name;
+                this.elements.attendanceMain.appendChild(option);
+            });
+            
+        } catch (error) {
+            console.error('Error loading mains for form:', error);
+            throw error;
+        }
+    }
+
+    async loadAttendanceForEdit(recordId) {
+        try {
+            // For now, we'll get the record from the displayed table
+            // In a real implementation, you might want to fetch from API
+            const tableRows = this.elements.attendanceTableBody.querySelectorAll('tr');
+            let recordData = null;
+            
+            tableRows.forEach(row => {
+                const editBtn = row.querySelector('.edit-btn');
+                if (editBtn && editBtn.onclick.toString().includes(recordId)) {
+                    const cells = row.querySelectorAll('td');
+                    recordData = {
+                        id: recordId,
+                        name: cells[0].textContent,
+                        main: cells[1].textContent,
+                        login_time: cells[2].textContent,
+                        is_custom_time: cells[3].textContent === 'Custom'
+                    };
+                }
+            });
+            
+            if (recordData) {
+                this.elements.editAttendanceId.value = recordData.id;
+                this.elements.attendanceName.value = recordData.name;
+                this.elements.attendanceMain.value = recordData.main;
+                this.elements.attendanceTimeType.value = recordData.is_custom_time ? 'custom' : 'system';
+                
+                // Parse and set the date/time
+                const dateTime = new Date(recordData.login_time);
+                console.log('Original datetime from record:', recordData.login_time);
+                console.log('Parsed datetime object:', dateTime);
+                
+                // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+                const year = dateTime.getFullYear();
+                const month = String(dateTime.getMonth() + 1).padStart(2, '0');
+                const day = String(dateTime.getDate()).padStart(2, '0');
+                const hours = String(dateTime.getHours()).padStart(2, '0');
+                const minutes = String(dateTime.getMinutes()).padStart(2, '0');
+                
+                const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+                console.log('Formatted datetime for input:', formattedDateTime);
+                this.elements.attendanceDateTime.value = formattedDateTime;
+            }
+            
+        } catch (error) {
+            console.error('Error loading attendance for edit:', error);
+            throw error;
+        }
+    }
+
+    async handleAttendanceSubmit(event) {
+        event.preventDefault();
+        
+        try {
+            const formData = new FormData(this.elements.attendanceForm);
+            const rawLoginTime = formData.get('loginTime');
+            const rawTimeType = formData.get('timeType');
+            
+            console.log('Form submission debug:');
+            console.log('Raw login time:', rawLoginTime);
+            console.log('Raw time type:', rawTimeType);
+            
+            // Better date handling - datetime-local gives us a string in YYYY-MM-DDTHH:mm format
+            let loginTimeISO;
+            if (rawLoginTime) {
+                // If the datetime-local doesn't include seconds, add them
+                const dateTimeString = rawLoginTime.includes(':') && rawLoginTime.split(':').length === 2 
+                    ? rawLoginTime + ':00' 
+                    : rawLoginTime;
+                
+                // Create date object and ensure it's valid
+                const dateObj = new Date(dateTimeString);
+                
+                console.log('Date object created:', dateObj);
+                console.log('Is valid date:', !isNaN(dateObj.getTime()));
+                
+                if (isNaN(dateObj.getTime())) {
+                    await this.modal.alert('Invalid date/time format. Please select a valid date and time.', 'Validation Error');
+                    return;
+                }
+                
+                loginTimeISO = dateObj.toISOString();
+            } else {
+                await this.modal.alert('Please select a date and time.', 'Validation Error');
+                return;
+            }
+            
+            const attendanceData = {
+                name: formData.get('name').trim(),
+                main: formData.get('main'),
+                loginTime: loginTimeISO,
+                isCustomTime: rawTimeType === 'custom'
+            };
+            
+            console.log('Final attendance data:', attendanceData);
+            
+            // Validation
+            if (!attendanceData.name || !attendanceData.main || !attendanceData.loginTime) {
+                await this.modal.alert('Please fill in all required fields with valid data', 'Validation Error');
+                return;
+            }
+            
+            const editId = this.elements.editAttendanceId.value;
+            const isEditing = editId !== '';
+            
+            const url = isEditing 
+                ? `/api/admin/attendance/${editId}`
+                : '/api/admin/attendance';
+            const method = isEditing ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(attendanceData)
+            });
+            
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
+            const result = await response.json();
+            console.log('Response body:', result);
+            
+            if (response.ok) {
+                await this.modal.alert(
+                    isEditing ? 'Attendance record updated successfully!' : 'Attendance record created successfully!',
+                    'Success'
+                );
+                this.hideAttendanceForm();
+                await this.loadAttendanceRecords(); // Refresh the table
+            } else {
+                console.error('Server error response:', result);
+                if (result.error && (result.error.includes('duplicate') || result.error.includes('unique constraint'))) {
+                    await this.modal.alert(
+                        'This person has already logged in today for this main. Duplicate entries are not allowed.',
+                        'Duplicate Entry'
+                    );
+                } else {
+                    await this.modal.alert(
+                        result.error || `Failed to ${isEditing ? 'update' : 'create'} attendance record`,
+                        'Error'
+                    );
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error in handleAttendanceSubmit:', error);
+            await this.modal.alert('An error occurred. Please try again.', 'Error');
+        }
+    }
+
+    ensureCreateButtonExists() {
+        const controlsPanel = document.querySelector('#attendance .controls-panel');
+        let createBtn = document.getElementById('createAttendanceBtn');
+        
+        if (!createBtn && controlsPanel) {
+            console.log('Create button not found, adding it dynamically...');
+            createBtn = document.createElement('button');
+            createBtn.id = 'createAttendanceBtn';
+            createBtn.className = 'action-btn create-btn';
+            createBtn.textContent = 'Create New Record';
+            
+            // Apply proper styling
+            createBtn.style.cssText = `
+                background: linear-gradient(135deg, #27ae60, #2ecc71) !important;
+                color: white !important;
+                border: 2px solid #229954 !important;
+                padding: 12px 24px !important;
+                border-radius: 8px !important;
+                cursor: pointer !important;
+                font-family: var(--font-heading) !important;
+                font-weight: 600 !important;
+                font-size: 14px !important;
+                margin-left: 12px !important;
+                min-width: 160px !important;
+                height: 44px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                line-height: 1 !important;
+                box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3) !important;
+            `;
+            
+            // Add click event
+            createBtn.addEventListener('click', () => {
+                console.log('Dynamically created button clicked!');
+                this.showAttendanceForm();
+            });
+            
+            controlsPanel.appendChild(createBtn);
+            console.log('Create button added dynamically');
+            
+            // Update elements reference
+            this.elements.createAttendanceBtn = createBtn;
+        }
+        
+        return createBtn;
+    }
+
+    // ...existing code...
 }
 
 // Initialize admin panel when DOM is loaded

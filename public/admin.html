@@ -30,6 +30,7 @@
                     <input type="password" id="password" name="password" required>
                 </div>
                 <button type="submit" class="submit-btn">Login</button>
+                <a href="/" class="back-to-form-btn">← Back to Attendance Form</a>
                 <div class="error-message" id="loginError" style="display: none;"></div>
             </form>
         </div>
@@ -104,6 +105,44 @@
                         <input type="date" id="attendanceDate" class="form-input">
                     </div>
                     <button id="loadAttendance" class="action-btn">Load Records</button>
+                    <button id="createAttendanceBtn" class="action-btn create-btn">Create New Record</button>
+                </div>
+
+                <!-- Create/Edit Attendance Record Form -->
+                <div id="attendanceFormPanel" class="form-panel" style="display: none;">
+                    <h3 id="attendanceFormTitle">Create New Attendance Record</h3>
+                    <form id="attendanceForm" class="attendance-form">
+                        <input type="hidden" id="editAttendanceId" name="id">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="attendanceName" class="form-label">Student Name:</label>
+                                <input type="text" id="attendanceName" name="name" class="form-input" required placeholder="Enter student name">
+                            </div>
+                            <div class="form-group">
+                                <label for="attendanceMain" class="form-label">Main:</label>
+                                <select id="attendanceMain" name="main" class="form-select" required>
+                                    <option value="">Select Main</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="attendanceDateTime" class="form-label">Login Date & Time:</label>
+                                <input type="datetime-local" id="attendanceDateTime" name="loginTime" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="attendanceTimeType" class="form-label">Time Type:</label>
+                                <select id="attendanceTimeType" name="timeType" class="form-select" required>
+                                    <option value="system">System Time</option>
+                                    <option value="custom">Custom Time</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="submit-btn" id="submitAttendanceBtn">Create Record</button>
+                            <button type="button" class="cancel-btn" id="cancelAttendanceBtn">Cancel</button>
+                        </div>
+                    </form>
                 </div>
 
                 <div class="attendance-table-container">
