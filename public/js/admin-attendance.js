@@ -85,6 +85,7 @@ class AdminAttendanceForm {
         this.form = document.getElementById('attendanceForm');
         this.nameInput = document.getElementById('studentName');
         this.mainSelect = document.getElementById('mainSelect');
+        this.adminPasswordInput = document.getElementById('adminPassword');
         this.systemTimeRadio = document.getElementById('systemTime');
         this.customTimeRadio = document.getElementById('customTime');
         this.currentTimeDisplay = document.getElementById('currentTime');
@@ -122,11 +123,16 @@ class AdminAttendanceForm {
         // Input validation
         this.nameInput.addEventListener('blur', () => this.validateName());
         this.mainSelect.addEventListener('change', () => this.validateMain());
+        this.adminPasswordInput.addEventListener('blur', () => this.validatePassword());
         this.customDateTime.addEventListener('change', () => this.validateCustomTime());
         
         // Clear messages when user starts typing
         this.nameInput.addEventListener('input', () => this.clearMessages());
         this.mainSelect.addEventListener('change', () => this.clearMessages());
+        this.adminPasswordInput.addEventListener('input', () => this.clearMessages());
+        
+        // Clear password field when page loads for security
+        this.adminPasswordInput.value = '';
     }
 
     async loadMains() {
@@ -253,6 +259,28 @@ class AdminAttendanceForm {
         }
     }
 
+    validatePassword() {
+        try {
+            const password = this.adminPasswordInput.value;
+            const passwordError = document.getElementById('passwordError');
+            
+            if (!password) {
+                passwordError.textContent = 'Admin password is required';
+                passwordError.style.display = 'block';
+                return false;
+            }
+            
+            // We'll verify the password with the server during submission
+            // For now, just check that it's not empty
+            passwordError.style.display = 'none';
+            return true;
+        } 
+        catch (error) {
+            console.error('Error validating admin password:', error);
+            return false;
+        }
+    }
+
     validateCustomTime() {
         if (!this.customTimeRadio.checked) {
             return true;
@@ -300,9 +328,10 @@ class AdminAttendanceForm {
         // Validate all fields
         const isNameValid = this.validateName();
         const isMainValid = this.validateMain();
+        const isPasswordValid = this.validatePassword();
         const isTimeValid = this.validateCustomTime();
         
-        if (!isNameValid || !isMainValid || !isTimeValid) {
+        if (!isNameValid || !isMainValid || !isPasswordValid || !isTimeValid) {
             return;
         }
         
@@ -314,6 +343,7 @@ class AdminAttendanceForm {
             const formData = new FormData(this.form);
             const name = formData.get('name').trim();
             const main = formData.get('main');
+            const adminPassword = formData.get('adminPassword');
             const timeOption = formData.get('timeOption');
             
             let loginTime;
@@ -331,7 +361,7 @@ class AdminAttendanceForm {
             // Normalize name for consistency
             const normalizedName = this.normalizeName(name);
             
-            // Submit to admin endpoint (no time restrictions)
+            // Submit to admin endpoint (with password verification)
             const response = await fetch('/api/admin/attendance', {
                 method: 'POST',
                 headers: {
@@ -341,7 +371,8 @@ class AdminAttendanceForm {
                     name: normalizedName,
                     main: main,
                     loginTime: loginTime,
-                    isCustomTime: isCustomTime
+                    isCustomTime: isCustomTime,
+                    adminPassword: adminPassword
                 })
             });
             
@@ -352,9 +383,19 @@ class AdminAttendanceForm {
                 this.form.reset();
                 this.setDefaultCustomTime();
                 this.toggleTimeInput(); // Reset time input display
+                // Clear password field for security
+                this.adminPasswordInput.value = '';
             } 
             else {
-                if (result.error && (result.error.includes('duplicate') || result.error.includes('unique constraint'))) {
+                if (response.status === 401) {
+                    // Password error
+                    const passwordError = document.getElementById('passwordError');
+                    passwordError.textContent = result.error || 'Invalid admin password';
+                    passwordError.style.display = 'block';
+                    this.adminPasswordInput.focus();
+                    this.adminPasswordInput.select();
+                } 
+                else if (result.error && (result.error.includes('duplicate') || result.error.includes('unique constraint'))) {
                     await this.modal.alert(
                         'This person has already logged attendance today for this main. Duplicate entries are not allowed.',
                         'Duplicate Entry'

@@ -80,6 +80,23 @@
                     <div class="form-error" id="timeError"></div>
                 </div>
 
+                <div class="form-group">
+                    <label for="adminPassword" class="form-label">Admin Password</label>
+                    <input 
+                        type="password" 
+                        id="adminPassword" 
+                        name="adminPassword" 
+                        class="form-input" 
+                        required
+                        placeholder="Enter admin password to submit"
+                        autocomplete="current-password"
+                    >
+                    <div class="form-error" id="passwordError"></div>
+                    <div class="form-help">
+                        This password is required to prevent unauthorized attendance submissions.
+                    </div>
+                </div>
+
                 <button type="submit" class="submit-btn" id="submitBtn">
                     <span class="btn-text">Record Attendance</span>
                     <div class="btn-loader" style="display: none;"></div>

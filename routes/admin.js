@@ -23,7 +23,16 @@ router.post('/login', (req, res) => {
 // Admin attendance submission (NO TIME RESTRICTIONS)
 router.post('/attendance', async (req, res) => {
     try {
-        const { name, main, loginTime, isCustomTime } = req.body;
+        const { name, main, loginTime, isCustomTime, adminPassword } = req.body;
+        
+        // Verify admin password first
+        if (!adminPassword) {
+            return res.status(401).json({ error: 'Admin password is required' });
+        }
+        
+        if (adminPassword !== process.env.ADMIN_PASSWORD) {
+            return res.status(401).json({ error: 'Invalid admin password' });
+        }
         
         if (!name || !main || !loginTime) {
             return res.status(400).json({ error: 'Name, main, and login time are required' });

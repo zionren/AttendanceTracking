@@ -421,6 +421,14 @@ body {
     display: none;
 }
 
+.form-help {
+    color: var(--vintage-brown);
+    font-size: 0.85rem;
+    margin-top: var(--spacing-xs);
+    font-style: italic;
+    opacity: 0.8;
+}
+
 .form-input.error,
 .form-select.error {
     border-color: var(--vintage-red);
