@@ -13,6 +13,63 @@ router.post('/login', (req, res) => {
     }
 });
 
+// Admin attendance submission (NO TIME RESTRICTIONS)
+router.post('/attendance', async (req, res) => {
+    try {
+        const { name, main, loginTime, isCustomTime } = req.body;
+        
+        if (!name || !main || !loginTime) {
+            return res.status(400).json({ error: 'Name, main, and login time are required' });
+        }
+        
+        // Parse and validate the login time
+        const parsedLoginTime = new Date(loginTime);
+        if (isNaN(parsedLoginTime.getTime())) {
+            return res.status(400).json({ error: 'Invalid login time format' });
+        }
+        
+        // Check for duplicate attendance (same name, main, and date)
+        const attendanceDate = parsedLoginTime.toISOString().split('T')[0];
+        
+        const existingAttendance = await client`
+            SELECT id FROM attendance 
+            WHERE LOWER(name) = LOWER(${name}) 
+            AND main = ${main} 
+            AND login_time::date = ${attendanceDate}::date
+        `;
+        
+        if (existingAttendance.length > 0) {
+            return res.status(400).json({ 
+                error: 'Duplicate attendance: This person has already logged attendance today for this main'
+            });
+        }
+        
+        // Insert attendance record
+        const result = await client`
+            INSERT INTO attendance (name, main, login_time, is_custom_time) 
+            VALUES (${name}, ${main}, ${parsedLoginTime.toISOString()}, ${isCustomTime})
+            RETURNING *
+        `;
+        
+        console.log(`Admin attendance recorded: ${name} for ${main} at ${parsedLoginTime.toISOString()}`);
+        res.json({ 
+            success: true, 
+            message: 'Attendance recorded successfully',
+            attendance: result[0]
+        });
+        
+    } catch (error) {
+        console.error('Error recording admin attendance:', error);
+        if (error.message.includes('unique constraint') || error.message.includes('duplicate')) {
+            res.status(400).json({ 
+                error: 'Duplicate attendance: This person has already logged attendance today for this main'
+            });
+        } else {
+            res.status(500).json({ error: 'Failed to record attendance' });
+        }
+    }
+});
+
 // Get daily attendance statistics for bar chart
 router.get('/daily-stats', async (req, res) => {
     try {

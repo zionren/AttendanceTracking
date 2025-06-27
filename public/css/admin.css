@@ -1451,60 +1451,115 @@
     box-shadow: 0 6px 20px rgba(160, 0, 0, 0.4);
 }
 
-/* Responsive Design for Admin */
-@media (max-width: 1200px) {
-    .charts-container {
-        grid-template-columns: 1fr;
-    }
+/* Admin Header Styles */
+.admin-header {
+    background: linear-gradient(135deg, var(--primary-gold), var(--ornate-bronze));
+    padding: var(--spacing-lg) var(--spacing-xl);
+    text-align: center;
+    border-radius: var(--ornate-radius);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-heavy);
+    border: 3px solid var(--vintage-brown);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
 }
 
+.admin-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+    pointer-events: none;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.admin-attendance-btn {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+    text-decoration: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 4px 15px rgba(46, 204, 113, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    border: 2px solid #229954;
+}
+
+.admin-attendance-btn:hover {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 25px rgba(46, 204, 113, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.admin-attendance-btn .btn-icon {
+    font-size: 1.1rem;
+}
+
+.logout-btn {
+    background: linear-gradient(135deg, var(--vintage-red), #cc0000);
+    color: white;
+    border: 2px solid #990000;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 4px 15px rgba(139, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.logout-btn:hover {
+    background: linear-gradient(135deg, #cc0000, var(--vintage-red));
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 25px rgba(139, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive header */
 @media (max-width: 768px) {
     .admin-header {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .admin-nav {
-        flex-direction: column;
-    }
-    
-    .nav-btn {
-        text-align: center;
-    }
-    
-    .controls-panel {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .create-form {
-        flex-direction: column;
-    }
-    
-    .date-range {
-        flex-direction: column;
-    }
-    
-    .chart-header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .chart-controls {
-        justify-content: space-between;
-    }
-}
-
-@media (max-width: 480px) {
-    .admin-container {
-        padding: var(--spacing-sm);
-    }
-    
-    .admin-main {
         padding: var(--spacing-md);
     }
     
-    .mains-grid {
-        grid-template-columns: 1fr;
+    .header-actions {
+        width: 100%;
+        justify-content: space-around;
+    }
+    
+    .admin-attendance-btn,
+    .logout-btn {
+        font-size: 0.8rem;
+        padding: var(--spacing-xs) var(--spacing-sm);
     }
 }

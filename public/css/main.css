@@ -71,13 +71,8 @@ body {
 .academy-header {
     text-align: center;
     margin-bottom: var(--spacing-xl);
-    background: rgba(245, 238, 224, 0.95);
-    border: 3px solid var(--primary-gold);
-    border-radius: var(--ornate-radius);
-    padding: var(--spacing-lg);
-    backdrop-filter: blur(10px);
+    padding: var(--spacing-lg) 0;
     position: relative;
-    overflow: hidden;
 }
 
 .academy-header::before {
@@ -94,13 +89,15 @@ body {
 
 .academy-title {
     font-family: var(--font-heading);
-    font-size: 3rem;
+    font-size: clamp(2.5rem, 5vw, 4rem);
     font-weight: 700;
-    color: var(--vintage-brown);
-    text-shadow: 2px 2px 4px rgba(139, 69, 19, 0.3);
-    letter-spacing: 0.1em;
+    color: var(--primary-gold);
+    text-shadow: 
+        3px 3px 0 var(--vintage-brown),
+        0 0 30px rgba(212, 175, 55, 0.5);
+    letter-spacing: 0.05em;
     margin-bottom: var(--spacing-sm);
-    position: relative;
+    text-transform: uppercase;
 }
 
 .academy-title::after {
@@ -115,10 +112,46 @@ body {
 
 .academy-subtitle {
     font-family: var(--font-heading);
-    font-size: 1.2rem;
-    color: var(--cream);
-    font-style: italic;
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    color: var(--vintage-brown);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+/* Admin Badge for Admin Attendance Portal */
+.admin-badge {
+    background: linear-gradient(135deg, var(--vintage-red), #cc0000);
+    color: white;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--border-radius);
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
     letter-spacing: 0.05em;
+    margin-top: var(--spacing-sm);
+    display: inline-block;
+    box-shadow: 
+        0 4px 15px rgba(139, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    border: 2px solid #990000;
+    animation: adminPulse 2s ease-in-out infinite;
+}
+
+@keyframes adminPulse {
+    0%, 100% {
+        box-shadow: 
+            0 4px 15px rgba(139, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2),
+            0 0 0 0 rgba(139, 0, 0, 0.7);
+    }
+    50% {
+        box-shadow: 
+            0 4px 15px rgba(139, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2),
+            0 0 0 4px rgba(139, 0, 0, 0.3);
+    }
 }
 
 /* Main Content */
