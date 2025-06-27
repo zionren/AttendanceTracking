@@ -41,7 +41,8 @@ class ModalManager {
                 this.modalCancel.style.display = 'inline-block';
                 this.modalOk.textContent = 'Yes';
                 this.modalCancel.textContent = 'No';
-            } else {
+            } 
+            else {
                 this.modalCancel.style.display = 'none';
                 this.modalOk.textContent = 'OK';
             }
@@ -58,7 +59,8 @@ class ModalManager {
                     resolve(false);
                 };
             });
-        } catch (error) {
+        } 
+        catch (error) {
             console.error('Error showing modal:', error);
             // Fallback to alert if modal fails
             return Promise.resolve(window.alert(message));
@@ -68,7 +70,8 @@ class ModalManager {
     hide() {
         try {
             this.modal.style.display = 'none';
-        } catch (error) {
+        } 
+        catch (error) {
             console.error('Error hiding modal:', error);
         }
     }
@@ -348,7 +351,8 @@ class AdminPanel {
             // Clear existing options except "All" options
             if (isMultiple) {
                 selector.innerHTML = '<option value="all">All Mains</option>';
-            } else {
+            } 
+            else {
                 selector.innerHTML = selector === this.elements.mainFilter 
                     ? '<option value="">All Mains</option>' 
                     : '<option value="all">All Mains</option>';
@@ -396,7 +400,8 @@ class AdminPanel {
             
             this.createBarChart(labels.reverse(), counts.reverse());
             
-        } catch (error) {
+        } 
+        catch (error) {
             console.error('Error in loadDailyChart:', error);
             const chartContainer = document.getElementById('dailyChart').parentElement;
             if (chartContainer) {
