@@ -371,9 +371,24 @@ router.post('/attendance', async (req, res) => {
     try {
         const { name, main, loginTime, isCustomTime } = req.body;
         
+        console.log('Admin attendance creation request:');
+        console.log('Name:', name);
+        console.log('Main:', main);
+        console.log('Login Time:', loginTime);
+        console.log('Is Custom Time:', isCustomTime);
+        console.log('Login Time type:', typeof loginTime);
+        
         // Validation
         if (!name || !main || !loginTime) {
+            console.log('Validation failed: missing required fields');
             return res.status(400).json({ error: 'Name, main, and login time are required' });
+        }
+        
+        // Validate date format
+        const loginDate = new Date(loginTime);
+        if (isNaN(loginDate.getTime())) {
+            console.log('Validation failed: invalid date format');
+            return res.status(400).json({ error: 'Invalid date/time format' });
         }
         
         // Validate name format
@@ -392,11 +407,20 @@ router.post('/attendance', async (req, res) => {
         
         try {
             // Insert attendance record
+            console.log('Attempting to insert:', {
+                name: name.trim(),
+                main: main,
+                loginTime: loginTime,
+                isCustomTime: isCustomTime || false
+            });
+            
             const result = await client`
                 INSERT INTO attendance (name, main, login_time, is_custom_time)
                 VALUES (${name.trim()}, ${main}, ${loginTime}, ${isCustomTime || false})
                 RETURNING *
             `;
+            
+            console.log('Successfully inserted:', result[0]);
             
             res.json({
                 message: 'Attendance record created successfully',
@@ -427,6 +451,12 @@ router.put('/attendance/:id', async (req, res) => {
         // Validation
         if (!name || !main || !loginTime) {
             return res.status(400).json({ error: 'Name, main, and login time are required' });
+        }
+        
+        // Validate date format
+        const loginDate = new Date(loginTime);
+        if (isNaN(loginDate.getTime())) {
+            return res.status(400).json({ error: 'Invalid date/time format' });
         }
         
         // Validate name format

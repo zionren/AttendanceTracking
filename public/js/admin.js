@@ -1112,9 +1112,16 @@ class AdminPanel {
                 
                 // Set current date/time as default
                 const now = new Date();
-                const localISOTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-                    .toISOString().slice(0, 16);
-                this.elements.attendanceDateTime.value = localISOTime;
+                // For datetime-local input, we need YYYY-MM-DDTHH:MM format
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                
+                const localDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+                console.log('Setting default datetime:', localDateTime);
+                this.elements.attendanceDateTime.value = localDateTime;
             }
             
             this.elements.attendanceFormPanel.style.display = 'block';
@@ -1187,9 +1194,19 @@ class AdminPanel {
                 
                 // Parse and set the date/time
                 const dateTime = new Date(recordData.login_time);
-                const localISOTime = new Date(dateTime.getTime() - dateTime.getTimezoneOffset() * 60000)
-                    .toISOString().slice(0, 16);
-                this.elements.attendanceDateTime.value = localISOTime;
+                console.log('Original datetime from record:', recordData.login_time);
+                console.log('Parsed datetime object:', dateTime);
+                
+                // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+                const year = dateTime.getFullYear();
+                const month = String(dateTime.getMonth() + 1).padStart(2, '0');
+                const day = String(dateTime.getDate()).padStart(2, '0');
+                const hours = String(dateTime.getHours()).padStart(2, '0');
+                const minutes = String(dateTime.getMinutes()).padStart(2, '0');
+                
+                const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+                console.log('Formatted datetime for input:', formattedDateTime);
+                this.elements.attendanceDateTime.value = formattedDateTime;
             }
             
         } catch (error) {
@@ -1203,16 +1220,50 @@ class AdminPanel {
         
         try {
             const formData = new FormData(this.elements.attendanceForm);
+            const rawLoginTime = formData.get('loginTime');
+            const rawTimeType = formData.get('timeType');
+            
+            console.log('Form submission debug:');
+            console.log('Raw login time:', rawLoginTime);
+            console.log('Raw time type:', rawTimeType);
+            
+            // Better date handling - datetime-local gives us a string in YYYY-MM-DDTHH:mm format
+            let loginTimeISO;
+            if (rawLoginTime) {
+                // If the datetime-local doesn't include seconds, add them
+                const dateTimeString = rawLoginTime.includes(':') && rawLoginTime.split(':').length === 2 
+                    ? rawLoginTime + ':00' 
+                    : rawLoginTime;
+                
+                // Create date object and ensure it's valid
+                const dateObj = new Date(dateTimeString);
+                
+                console.log('Date object created:', dateObj);
+                console.log('Is valid date:', !isNaN(dateObj.getTime()));
+                
+                if (isNaN(dateObj.getTime())) {
+                    await this.modal.alert('Invalid date/time format. Please select a valid date and time.', 'Validation Error');
+                    return;
+                }
+                
+                loginTimeISO = dateObj.toISOString();
+            } else {
+                await this.modal.alert('Please select a date and time.', 'Validation Error');
+                return;
+            }
+            
             const attendanceData = {
                 name: formData.get('name').trim(),
                 main: formData.get('main'),
-                loginTime: new Date(formData.get('loginTime')).toISOString(),
-                isCustomTime: formData.get('timeType') === 'custom'
+                loginTime: loginTimeISO,
+                isCustomTime: rawTimeType === 'custom'
             };
+            
+            console.log('Final attendance data:', attendanceData);
             
             // Validation
             if (!attendanceData.name || !attendanceData.main || !attendanceData.loginTime) {
-                await this.modal.alert('Please fill in all required fields', 'Validation Error');
+                await this.modal.alert('Please fill in all required fields with valid data', 'Validation Error');
                 return;
             }
             
@@ -1230,7 +1281,11 @@ class AdminPanel {
                 body: JSON.stringify(attendanceData)
             });
             
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            
             const result = await response.json();
+            console.log('Response body:', result);
             
             if (response.ok) {
                 await this.modal.alert(
@@ -1240,6 +1295,7 @@ class AdminPanel {
                 this.hideAttendanceForm();
                 await this.loadAttendanceRecords(); // Refresh the table
             } else {
+                console.error('Server error response:', result);
                 if (result.error && (result.error.includes('duplicate') || result.error.includes('unique constraint'))) {
                     await this.modal.alert(
                         'This person has already logged in today for this main. Duplicate entries are not allowed.',
