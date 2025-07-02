@@ -38,7 +38,8 @@ router.post('/submit', async (req, res) => {
             attendance: result[0]
         });
 
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Attendance submission error:', error);
         res.status(500).json({ error: 'Failed to record attendance' });
     }
@@ -63,7 +64,8 @@ router.get('/mains', async (req, res) => {
         `;
 
         res.json(mains);
-    } catch (error) {
+    } 
+    catch (error) {
         console.error('Error fetching mains:', error);
         res.status(500).json({ error: 'Failed to fetch mains' });
     }

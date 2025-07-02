@@ -160,8 +160,13 @@ router.get('/main-stats', async (req, res) => {
             GROUP BY m.name, m.display_name
             ORDER BY 
                 CASE 
-                WHEN m.name = 'council' THEN 999 
-                ELSE CAST(m.name AS INTEGER) 
+                    WHEN m.name = 'council' THEN 999 
+                    ELSE CAST(
+                        CASE 
+                            WHEN m.name ~ '^[0-9]+$' THEN m.name::INTEGER
+                            ELSE 998
+                        END
+                    AS INTEGER)
                 END
             `;
         } 
